@@ -392,7 +392,7 @@ body.quake #app,body.quake main,body.quake .wrap{animation:quake .45s linear}@ke
 .plan{background:#fff6d8;border-radius:12px;padding:8px 10px;font-size:14px;margin:8px 0}
 .cert{position:relative;margin:12px 0;padding:16px 14px 12px;border-radius:16px;background:#fffdf5;border:3px double #c9a24a;text-align:center;color:#1d2b36;-webkit-text-fill-color:#1d2b36}.cert.gold{background:linear-gradient(135deg,#fff3c4,#ffe08a);border-color:#b8860b}.cseal{font-size:40px;line-height:1}.cert small{display:block;font:700 12px Fredoka,sans-serif;letter-spacing:.1em;color:#9a7a2a;-webkit-text-fill-color:#9a7a2a;margin-top:4px}.cert h3{font:700 30px Fredoka,sans-serif;margin:2px 0}.cert p{font-size:14px;margin:4px 0 8px}.cert ul{list-style:none;padding:0;margin:0 0 10px;text-align:left;font-size:13.5px}.cert li.ok{color:#1d7a45;-webkit-text-fill-color:#1d7a45}.cert li.half{color:#b7791f;-webkit-text-fill-color:#b7791f}.cert li.no{color:#8a8a8a;-webkit-text-fill-color:#8a8a8a}.csig{display:flex;justify-content:space-between;border-top:1px dashed #c9a24a;padding-top:6px;font-family:Fredoka,sans-serif;font-size:15px}.csig small{display:inline;letter-spacing:0;font-size:11px}
 .hof{margin-top:12px;background:#f3f0ff;border-radius:14px;padding:10px 12px;color:#1d2b36;-webkit-text-fill-color:#1d2b36}.hofb{font-size:14px;margin:4px 0}.hof ol{margin:4px 0 0;padding-left:20px;font-size:13.5px}.hof li small{display:block;color:#6b7680;-webkit-text-fill-color:#6b7680;font-size:11.5px}.pieb{display:block;text-align:center;margin-top:10px;background:#ffd98a;color:#5a3d00;text-decoration:none}
-@media (prefers-reduced-motion:reduce){.coach,.coachT{animation:none}}.coach .b.go{color:#fff;-webkit-text-fill-color:#fff}.fnb{display:inline-block;background:#fff;border-radius:999px;padding:2px 10px;font:12px Fredoka,sans-serif;color:#2e5d8a;margin-right:6px;vertical-align:1px}
+@media (prefers-reduced-motion:reduce){.coach,.coachT{animation:none}}.coach .b.go{color:#fff;-webkit-text-fill-color:#fff}.sold{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;border-radius:14px;padding:8px 12px;margin-top:6px;background:#eaf6ec;color:#1d5a35;-webkit-text-fill-color:#1d5a35}.sold.neg{background:#fdecea;color:#a3281d;-webkit-text-fill-color:#a3281d}.sold small{display:block;font-size:11.5px;opacity:.8}.sold b{font:700 18px Fredoka,sans-serif}.dscheme{display:block;font-style:normal;font:600 11.5px Fredoka,sans-serif;color:#1d7a45;-webkit-text-fill-color:#1d7a45}.dscheme.no{color:#8a6d2a;-webkit-text-fill-color:#8a6d2a}.fnb{display:inline-block;background:#fff;border-radius:999px;padding:2px 10px;font:12px Fredoka,sans-serif;color:#2e5d8a;margin-right:6px;vertical-align:1px}
 .home2{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:#fff;border-radius:18px;padding:8px 10px;box-shadow:0 4px 0 #c6d9e4}
 .home2 .hs{width:64px;height:43px;border-radius:10px;display:block}
 .home2 .a{font-size:13px;color:#5a6b78;font-weight:700;line-height:1.1}.home2 .b2{font:22px/1.1 Fredoka,sans-serif;color:#1d2b36}.home2 .b2 small{font:700 13px Nunito,sans-serif;color:#5a6b78}
@@ -677,18 +677,23 @@ function ask(html,buttons,def,cls){
   setTimeout(()=>{const m=$('#mbox'),bt=m.querySelector('.btns button');if(bt)bt.focus({preventScroll:true});m.scrollTop=0},30)})}
 
 /* ---------- bank ---------- */
+const CAPM={NSW:1500000,VIC:950000,QLD:1000000,WA:850000,SA:900000,TAS:700000,ACT:1000000,NT:750000},CAPO={NSW:800000,VIC:650000,QLD:700000,WA:600000,SA:500000,TAS:550000,ACT:1000000,NT:600000};
+const METRO=new Set(['Parramatta (unit)','Newcastle','Wollongong','Mosman','Melbourne CBD (unit)','Geelong','Toorak','Gold Coast','Noosa Heads','Elizabeth','Glenelg','Midland','Fremantle','Cottesloe','Sandy Bay, Hobart','Belconnen (unit)','Yarralumla','Darwin']);
+function schemeCap(L){return (METRO.has(L.n)?CAPM:CAPO)[L.st]||600000}
+function soldToday(p){if(p.home==null)return null;const v=LST[p.home].v,l=p.loans[p.home]?p.loans[p.home].bal:0;return v*0.975-l}
 function bankTest(p,i,premium=1){
  const s=LST[i],price=s.v*premium,isHome=p.home==null&&!p.dad;
  const first=isHome&&!p.everOwned;
  const duty=first&&price<=650000?0:price*0.04;
  const grant=first&&p.fhog?10000:0;
  const costs=p.dad?0:5180*g.cpiIdx;const avail=p.cash+grant-3000-costs;
- const r={i,price,duty,grant,isHome,first,costs,ok:false,reason:''};
+ const cap=schemeCap(s),sp=p.ck==='mum'&&!p.partner&&p.kids.length>0,scheme=first&&!p.dad&&price<=cap;
+ const r={i,price,duty,grant,isHome,first,costs,ok:false,reason:'',scheme,cap,sp};
  if(p.bankruptUntil>g.years){r.reason=`Bankrupt until ${g.startYear+p.bankruptUntil}.`;return r}
  if(p.jobless>0){r.reason='No job, no loan.';return r}
  const dep=Math.min(avail-duty,price);r.dep=Math.max(0,dep);
- const minDep=p.dad?0.05:0.20;if(dep<price*minDep){r.reason=`Need a ${minDep*100}% deposit + duty + buying costs: ${money(price*minDep+duty+costs+3000)}.`;return r}
- const base=price-dep,lvr=base/price,lmiR=lvr>0.9?0.038:lvr>0.85?0.023:lvr>0.8?0.012:0;
+ const minDep=p.dad?0.05:scheme?(sp?0.02:0.05):0.20;if(dep<price*minDep){r.reason=`Need a ${minDep*100}% deposit${scheme?' (5% Deposit Scheme)':first&&price>cap?` (over the ${money(cap)} scheme cap here)`:''} + duty + buying costs: ${money(price*minDep+duty+costs+3000)}.`;return r}
+ const base=price-dep,lvr=base/price,lmiR=scheme?0:lvr>0.9?0.038:lvr>0.85?0.023:lvr>0.8?0.012:0;
  r.lmi=base*lmiR;r.loan=base+r.lmi;
  const ar=g.rate+(isHome?0:0.0035)+0.03;r.assess=ar;
  let income=gross(p)+(p.partner?p.partner.salary:0)+(p.dad&&!p.aged?p.consult*g.cpiIdx:0);
@@ -715,7 +720,8 @@ function buy(p,r){
  if(r.isHome){p.home=r.i;p.homeAge=p.age;p.moved=false;
   {const L0=LST[r.i];const dream=dreamOK(p,L0);if(dream&&p.dreamAge==null)p.dreamAge=p.age;else if(!dream&&p.human)log(`It's a roof. But ${esc(L0.n)} isn't quite the dream.`)}
   if(LST[r.i].r&&!p.regional){p.regional=true;p.salary*=0.88;log(`<b>${nm(p)}</b> moved to ${s.n} for the house. Local jobs pay about 12% less.`)}}
- log(`<b>${nm(p)}</b> bought ${r.isHome?'a home in':'an investment in'} ${s.n} for ${money(r.price)}${r.lmi?` (incl. ${money(r.lmi)} LMI)`:''}.`)}
+ log(`<b>${nm(p)}</b> bought ${r.isHome?'a home in':'an investment in'} ${s.n} for ${money(r.price)}${r.lmi?` (incl. ${money(r.lmi)} LMI)`:''}${r.scheme?` with a ${r.sp?2:5}% deposit (5% Deposit Scheme, no LMI)`:''}.`);
+ if(r.isHome&&p.human&&!FAST){const st=soldToday(p);chatQ.push(...(r.scheme?[['mum','A HOME OWNER!!! 😭🏡'],['dad',`${r.sp?2:5}% deposit? We needed 20 and a handshake.`],['mum','Graham. Let them have this.']]:[['mum','A HOME OWNER!!! 😭🏡'],['dad','Good. Now never sell.']]));if(st<0)chatQ.push(['dad',`Fun fact: if you sold tomorrow you’d owe the bank ${money(-st)}. Don’t sell tomorrow.`]);try{if(!chatBusy)showChat()}catch(e){}}}
 function sellProp(p,i,why){const s=LST[i];const l=p.loans[i]?p.loans[i].bal:0;const gain=Math.max(0,s.v-(p.cost[i]||s.v));
  const cgt=i===p.home?0:gain*0.5*(p.dad?0.32:marginal(gross(p)));const net=s.v*0.978-l-cgt;
  p.cash+=net;delete p.loans[i];s.owner=null;if(p.home===i)p.home=null;
@@ -1607,7 +1613,7 @@ async function openHome(p,auction,town){
   if(p.home==null&&ok.length&&R()<0.9)buy(p,ok[0]);
   else if(p.home!=null&&ok.length&&p.cash>ok[0].price*0.12&&R()<0.25){ok[0].isHome=false;buy(p,ok[0])}
   return}
- const rows=tests.slice(0,12).map(r=>`<div class="opt" style="grid-template-columns:64px minmax(0,1fr) auto">${houseSVG(LST[r.i].ty,LST[r.i].n,LST[r.i].v)}<span>${dreamOK(p,LST[r.i])?'<em class="dstar">⭐ Ticks your goal</em>':''}${esc(LST[r.i].n)} <small style="display:inline">${LST[r.i].st}</small> <b>${money(r.price)}</b><small>${r.ok?`Deposit ${money(r.dep)}${r.duty?`, duty ${money(r.duty)}`:''}${r.lmi?`, LMI ${money(r.lmi)}`:''}. Repayments ${money(pmt(g.rate+(r.isHome?0:.0035),30,r.loan)/26)}/fortnight`:esc(r.reason)}</small></span>
+ const rows=tests.slice(0,12).map(r=>`<div class="opt" style="grid-template-columns:64px minmax(0,1fr) auto">${houseSVG(LST[r.i].ty,LST[r.i].n,LST[r.i].v)}<span>${dreamOK(p,LST[r.i])?'<em class="dstar">⭐ Ticks your goal</em>':''}${r.first&&!p.dad?(r.scheme?`<em class="dscheme">✅ ${r.sp?2:5}% Deposit Scheme · no LMI</em>`:`<em class="dscheme no">Over the ${money(r.cap)} scheme cap · 20% deposit</em>`):''}${esc(LST[r.i].n)} <small style="display:inline">${LST[r.i].st}</small> <b>${money(r.price)}</b><small>${r.ok?`Deposit ${money(r.dep)}${r.duty?`, duty ${money(r.duty)}`:''}${r.lmi?`, LMI ${money(r.lmi)}`:''}. Repayments ${money(pmt(g.rate+(r.isHome?0:.0035),30,r.loan)/26)}/fortnight`:esc(r.reason)}</small></span>
   ${r.ok?`<button class="b sm go" data-pick="${r.i}">Buy</button>`:'<span class="neg" style="font-weight:600">No</span>'}</div>`).join('');
  const ans=await ask(`<span class="tag red">${auction?'AUCTION':'OPEN HOME'}</span><h2>${auction?'Going once, going twice':'Have a look around'}</h2>
   <p>${auction?`Bidding war: everything sells ${pct(prem-1)} over the listed price. `:''}${p.home==null?'If you buy, it becomes your home and you stop paying rent.':'You own a home, so this would be an investment.'} The bank tests you at today's rate + 3%.</p>${rows||'<p>Nothing for sale.</p>'}`,
@@ -2135,6 +2141,7 @@ function renderMoney(){const p=P.find(x=>x.id===g.active)||P[0];if(!p)return;{co
   +row('🔒','lock','Super',sup,'')+(p.lastL?row((p.lastNet||0)>=0?'📈':'📉',(p.lastNet||0)>=0?'pay':'owe','Payday',p.lastNet||0,''):row('🗓️','pay','Payday',0,''))
   +(help+loans>0||cc>0?row('📋','owe','Owe',-(help+loans+cc),[help?`HELP ${money(help)}${gross(p)<g.helpTh?' (not repaying yet)':''}`:'',loans?`Home loan ${money(loans)}`:'',cc?`Card ${money(cc)}`:''].filter(Boolean).join(' · ')):'')}
  $('#myMoney').innerHTML=`<div class="mny" style="--nc:${Math.min(4,(rows.match(/class="mrow/g)||[]).length||1)}">${rows}
+  ${p.home!=null&&!p.dad?(()=>{const st=soldToday(p);return `<div class="sold ${st<0?'neg':'pos'}"><span>🏡 If you sold today<small>${st<0?'After agent fees you’d still owe the bank.':'After agent fees and paying off the loan.'}</small></span><b>${money(st)}</b></div>`})():''}
   <button class="mnw" id="nwBtn"><span><b>${who} net worth</b><small>Everything owned, minus everything owed</small></span><strong class="${n<0?'neg':'pos'}">${money(n)}</strong></button></div>`;
  $('#nwBtn').onclick=()=>peek({t:'tax',art:'coins',head:'Net worth',sub:'What it means',text:`Everything ${p.human?'you own':'they own'} (savings, super, property) minus everything ${p.human?'you owe':'they owe'} (card debt, loans${p.help?', HELP debt of '+money(p.help):''}). ${n<0?'Below zero means debts are bigger than assets.':''}`},6000)}
 function depGoal(p){const fs=LST.map((s,i)=>i).filter(i=>!LST[i].owner);if(!fs.length)return null;const i=fs[0],v=LST[i].v;const first=!p.everOwned;
